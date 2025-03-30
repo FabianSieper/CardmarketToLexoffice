@@ -3,13 +3,14 @@ import logging
 import os
 import re
 import sys
+import time
 from datetime import datetime
 from decimal import Decimal
 
-import pandas as pd
 import pycountry
 import pytz
 import requests
+from dotenv import load_dotenv, set_key
 from tqdm import tqdm
 
 # Logging-Konfiguration
@@ -18,19 +19,21 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # API-Basis-URLs
 LEXOFFICE_BASE_URL = "https://api.lexoffice.io/v1"
 
+env_file = ".env"
+load_dotenv(dotenv_path=env_file)
+
 def ask_or_get_api_key():
-    """Fragt den Benutzer nach dem API-Key oder verwendet den in der Umgebungsvariable."""
+    """Fragt den Benutzer nach dem API-Key oder verwendet den in der .env-Datei."""
     api_key = os.getenv("LEXOFFICE_API_KEY")
     if not api_key:
         api_key = input("Bitte geben Sie Ihren Lexoffice API-Key ein: ").strip()
-        os.environ["LEXOFFICE_API_KEY"] = api_key
+        set_key(env_file, "LEXOFFICE_API_KEY", api_key)
     else:
         print(f"Der aktuell verwendete API-Key ist: {api_key}")
         new_api_key = input("Drücken Sie Enter, um den aktuellen API-Key zu verwenden, oder geben Sie einen neuen ein: ").strip()
         if new_api_key:
             api_key = new_api_key
-            os.environ["LEXOFFICE_API_KEY"] = api_key
-
+            set_key(env_file, "LEXOFFICE_API_KEY", api_key)
     return api_key
 
 def take_cardmarket_orders_via_cmd_input():
@@ -118,7 +121,7 @@ def join_shipment_data(orders):
                 "rarity": parts[2].strip() if len(parts) > 2 else None,
                 "card condition": parts[3].strip() if len(parts) > 3 else None,
                 "language": parts[4].strip() if len(parts) > 4 else None,
-                "price per card": parts[5].strip() if len(parts) > 5 else None,
+                "price per card": parts[-1].strip() if len(parts) > 5 else None,
                 "product id": p,
                 "name": n
             }
@@ -343,6 +346,10 @@ def main():
             success_count += 1
         else:
             logging.error(f"Rechnung für Bestellung {order.get('id', 'Unbekannt')} konnte nicht übertragen werden.")
+        
+        # Required to avoid hitting the API rate limit
+        time.sleep(0.5)
+        
     logging.info(f"Übertragung abgeschlossen: {success_count} von {len(orders)} Rechnungen erfolgreich übertragen.")
     input("Drücken Sie Enter, um das Programm zu beenden.")
 
