@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-import datetime
 import logging
 import os
 import sys
+from datetime import datetime
 
 import pandas as pd
 import requests
@@ -13,15 +13,23 @@ from tqdm import tqdm
 # Logging-Konfiguration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Konfiguration über Environment-Variablen
-LEXOFFICE_API_KEY = os.getenv("LEXOFFICE_API_KEY")
-
-if not all([LEXOFFICE_API_KEY]):
-    logging.error("Fehlende Konfigurationsvariablen. Bitte alle erforderlichen Environment Variables setzen.")
-    sys.exit(1)
-
 # API-Basis-URLs
 LEXOFFICE_BASE_URL = "https://api.lexoffice.io/v1"
+
+def ask_or_get_api_key():
+    """Fragt den Benutzer nach dem API-Key oder verwendet den in der Umgebungsvariable."""
+    api_key = os.getenv("LEXOFFICE_API_KEY")
+    if not api_key:
+        api_key = input("Bitte geben Sie Ihren Lexoffice API-Key ein: ").strip()
+        os.environ["LEXOFFICE_API_KEY"] = api_key
+    else:
+        print(f"Der aktuell verwendete API-Key ist: {api_key}")
+        new_api_key = input("Drücken Sie Enter, um den aktuellen API-Key zu verwenden, oder geben Sie einen neuen ein: ").strip()
+        if new_api_key:
+            api_key = new_api_key
+            os.environ["LEXOFFICE_API_KEY"] = api_key
+
+    return api_key
 
 def take_cardmarket_orders_via_cmd_input():
     """Nimmt Bestellungen von CardMarket über eine CMD-Eingabe entgegen."""
@@ -71,22 +79,16 @@ def extract_csv_data(file_path):
     df.columns = df.columns.str.strip().str.lower()
     return df
 
-def join_shipment_data(file_path_or_orders):
+def join_shipment_data(orders):
     """
-    Gruppiert Daten (als DataFrame oder Liste von Dictionaries) nach Shipment Number.
+    Gruppiert Daten nach Shipment Number.
     Die Spalte wird standardisiert (lower case) und es wird pandas.groupby() verwendet.
     """
-    if isinstance(file_path_or_orders, pd.DataFrame):
-        df = file_path_or_orders
-    elif isinstance(file_path_or_orders, list):
-        df = pd.DataFrame(file_path_or_orders)
-    else:
-        df = extract_csv_data(file_path_or_orders)
-    if 'shipment nr.' not in df.columns:
+    if 'shipment nr.' not in orders.columns:
         logging.error("Spalte 'shipment nr.' wurde in den Daten nicht gefunden.")
         return {}
-    shipments = {}
-    for shipment_nr, group in df.groupby('shipment nr.'):
+    shipments = []
+    for shipment_nr, group in orders.groupby('shipment nr.'):
         articles = []
         for _, row in group.iterrows():
             article_info = {
@@ -102,25 +104,40 @@ def join_shipment_data(file_path_or_orders):
                 "comments": row.get("comments"),
             }
             articles.append(article_info)
-        shipments[shipment_nr] = {
+        # TODO: add information about buyer
+        buyer_info = None
+        shipments.append({
             "shipment_nr": shipment_nr,
+            "dateOfPurchase": datetime.strptime(row.get("date of purchase"), "%Y-%m-%d %H:%M:%S"),
+            "buyer": buyer_info,
             "articles": articles
-        }
+        })
     return shipments
 
 def create_invoice_payload(order):
     """Übersetzt eine CardMarket-Bestellung in ein lexoffice-Rechnungs-Payload-Format."""
-    buyer_info = order.get('buyer', {})
+    # TODO: uncomment for production
+    # buyer_info = order.get('buyer')
+    # if not buyer_info:
+    #     logging.error("Keine Käuferinformationen gefunden. Kann keine Rechnung für Bestellung mit Liefernummer (Shipment Nr.) {} erstellen.".format(order.get('shipment_nr', 'Unbekannt')))
+    #     return None # No success
+    
+    # TODO: add actual data for production
     customer = {
-        "name": buyer_info.get("username", "Unbekannt"),
+        "name": "Some Name",
         "address": {
-            "street": buyer_info.get("street", ""),
-            "zip": buyer_info.get("zip", ""),
-            "city": buyer_info.get("city", ""),
-            "countryCode": buyer_info.get("countryCode", "DE")
+            "street": "Some Street",
+            "zip": "Some Zip",
+            "city": "Some City",
+            "countryCode": "DE"
         }
     }
-    voucher_date = order.get('dateReceived', datetime.date.today().isoformat())
+    voucher_date = order.get('dateOfPurchase')
+    
+    if not voucher_date:
+        logging.error("Kein Datum gefunden. Kann keine Rechnung für Bestellung mit Liefernummer (Shipment Nr.) {} erstellen.".format(order.get('shipment_nr', 'Unbekannt')))
+        return None
+    
     line_items = []
     articles = order.get('articles', [])
     for article in articles:
@@ -153,19 +170,20 @@ def create_invoice_payload(order):
     
     payload = {
         "customer": customer,
+        "archived": False,
         "voucherDate": voucher_date,
         "lineItems": line_items,
         "taxConditions": {
-            "taxType": "net"
+            "taxType": "vatfree"
         }
     }
     return payload
 
-def send_invoice_to_lexoffice(invoice_payload):
+def send_invoice_to_lexoffice(invoice_payload, api_key):
     """Sendet eine Rechnung an die lexoffice API."""
     endpoint = f"{LEXOFFICE_BASE_URL}/invoices"
     headers = {
-        "Authorization": f"Bearer {LEXOFFICE_API_KEY}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     try:
@@ -182,16 +200,21 @@ def send_invoice_to_lexoffice(invoice_payload):
 
 def main():
     logging.info("Starte den Abgleich von CardMarket zu Lexoffice.")
+    # TODO: ask for api key if not set in env variables and then put into env variables
+    api_key = ask_or_get_api_key()
     orders = take_cardmarket_orders_via_cmd_input()
-    print(next(iter(orders.values())))
-    exit(0)
 
     success_count = 0
-    for order in tqdm(joined_orders, "Rechnungen werden übertragen..."):
+    for order in tqdm(orders, "Rechnungen werden übertragen..."):
         invoice_payload = create_invoice_payload(order)
-
+        # TODO: remove for production
+        exit()
+        if not invoice_payload:
+            logging.error(f"Fehler beim Erstellen der Rechnung für Bestellung {order.get('shipment_nr', 'Unbekannt')}.")
+            continue
+        
         # TODO: uncomment for production
-        # if send_invoice_to_lexoffice(invoice_payload):
+        # if send_invoice_to_lexoffice(invoice_payload, api_key):
         #     success_count += 1
         # else:
         #     logging.error(f"Rechnung für Bestellung {order.get('id', 'Unbekannt')} konnte nicht übertragen werden.")

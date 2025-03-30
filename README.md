@@ -1,34 +1,14 @@
-# ToDos
-
-- install_windows.bat erstellen die installiert:
-  - python
-  - taskfile
-  und erstellt auf dem desktop eine .bat zum ausführen des ganzen
-
 # Card Market to Lex Office Script
 
-## Requirements
+This application can be used to import invoices into Lex Office by providing a .csv file from cardmarket. Cardmarket is a platform for buying and selling "Magic the Gathering" playing cards.
+
+## Requirements for development
 
 ### Taskfile
 
 Taskfile is used to simplify the usage of the application. To install Taskfile run the following command in your terminal.
 
 ```bash
-# Ensure curl is installed
-command -v curl >/dev/null 2>&1 || { \
-  echo "Installing curl..."; \
-  if [ "$(uname)" = "Darwin" ]; then \
-    brew install curl; \
-  elif [ -f /etc/debian_version ]; then \
-    sudo apt update && sudo apt install -y curl; \
-  elif [ -f /etc/redhat-release ]; then \
-    sudo dnf install -y curl; \
-  else \
-    echo "Please install curl manually."; exit 1; \
-  fi \
-}
-
-# Install Task
 curl -sSL https://taskfile.dev/install.sh | sh
 ```
 
