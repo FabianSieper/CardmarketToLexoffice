@@ -56,7 +56,7 @@ tasks:
     deps:
       - install
     cmds:
-      - pyinstaller --noconfirm --onefile --name cardmarketToLexoffice.exe --windowed main.py
+      - python -m PyInstaller --noconfirm --onefile --name cardmarketToLexoffice.exe --windowed main.py
       - cp dist/cardmarketToLexoffice.exe .
       - rm cardmarketToLexoffice.exe.spec
       - rm -r build
