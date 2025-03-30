@@ -152,6 +152,13 @@ def get_country_code(country_name: str) -> str:
             return c.alpha_2
     raise ValueError(f"Country code for '{country_name}' not found.")
 
+def parse_date(date_str: str) -> datetime:
+    for fmt in ("%d.%m.%Y %H:%M:%S", "%Y-%m-%d %H:%M:%S"):
+        try:
+            return datetime.strptime(date_str, fmt)
+        except ValueError:
+            continue
+    raise ValueError(f"No valid date format found for {date_str}")
 
 def create_invoice_payload(order):
     """Übersetzt eine CardMarket-Bestellung in ein lexoffice-Rechnungs-Payload-Format."""
@@ -195,7 +202,7 @@ def create_invoice_payload(order):
         logging.error("Kein Datum gefunden. Kann keine Rechnung für Bestellung mit Liefernummer (Shipment Nr.) {} erstellen.".format(order.get('shipment_nr', 'Unbekannt')))
         return None
     
-    dt = datetime.strptime(unformatted_voucher_date, "%d.%m.%Y %H:%M:%S")
+    dt = parse_date(unformatted_voucher_date)
     german_tz = pytz.timezone("Europe/Berlin")
     localized_dt = german_tz.localize(dt)
     voucher_date = localized_dt.isoformat(timespec='milliseconds')    
@@ -238,19 +245,22 @@ def create_invoice_payload(order):
             "unitName": "Stück",
             "unitPrice": {
                 "currency": currency,
-                "netAmount": unit_price_formatted,
-                "taxRatePercentage": 19
+                "netAmount": str(unit_price_formatted),
+                "taxRatePercentage": 0 # "Line items in vatfree invoices must not contain taxes."
             },
             "discountPercentage": 0,
-            "lineItemAmount": unit_price_formatted * quantity
+            "lineItemAmount": str(unit_price_formatted * quantity)
         }
         line_items.append(item)
+        
     shipping_cost = order.get("shipment costs")
 
     if not shipping_cost:
         logging.warning(f"Bestellung {order.get('shipment_nr', 'Unbekannt')} für Kunden '{customer['name']}' hat keine Versandkosten. Sollte das nicht richtig sein, bitte manuell in Lexoffice hinzufügen.")
         shipping_cost = 0
         
+    shipping_cost_formatted = Decimal(shipping_cost.replace(",", "."))
+    
     if shipping_cost:
         shipping_item = {
             "type": "custom",
@@ -259,16 +269,36 @@ def create_invoice_payload(order):
             "unitName": "Pauschale",
             "unitPrice": {
                 "currency": order.get("currency", "EUR"),
-                "netAmount": shipping_cost,
-                "taxRatePercentage": 19
+                "netAmount": str(shipping_cost_formatted),
+                "taxRatePercentage": 0 # "Line items in vatfree invoices must not contain taxes." 
             },
             "discountPercentage": 0,
             "lineItemAmount": shipping_cost
         }
         line_items.append(shipping_item)
     
+    # TODO: add address of own company?
+    address = {
+    "name": "Bike & Ride GmbH & Co. KG",
+        "supplement": "Gebäude 10",
+        "street": "Musterstraße 42",
+        "city": "Freiburg",
+        "zip": "79112",
+        "countryCode": "DE"
+    }
+    
+    shipping_conditions = {
+        "shippingDate": voucher_date,
+        "shippingType": "delivery"
+    }
+      
     payload = {
         "customer": customer,
+        "address": address,
+        "totalPrice": {
+            "currency": "EUR"
+        },
+        "shippingConditions": shipping_conditions,
         "archived": False,
         "voucherDate": voucher_date,
         "lineItems": line_items,
