@@ -80,10 +80,17 @@ def extract_csv_data(file_path):
 def join_shipment_data(orders):
     """
     Fügt Zeilen zusammen, die zur selben Bestellung gehören, erstellt eine neue Spalte 'items',
-    in der jede Liste von Dictionaries die entsprechenden Werte aus 'description',
-    'product id' und 'localized product name' enthält, und entfernt anschließend die
-    ursprünglichen Spalten.
+    in der jede Liste von Dictionaries die entsprechenden Werte enthält.
+    Dabei wird die Spalte "description" anhand des Trennzeichens " - " aufgespalten:
+      - Erster Teil: Neuer "description"
+      - Zweiter Teil: "number"
+      - Dritter Teil: "rarity"
+      - Vierter Teil: "dont know what this is"
+      - Fünfter Teil: "language"
+      - Sechster Teil: "price per card"
     """
+    import logging  # sicherstellen, dass logging importiert ist
+    
     if 'orderid' not in orders.columns:
         logging.error("Spalte 'orderid' wurde in den Daten nicht gefunden.")
         return {}
@@ -91,10 +98,10 @@ def join_shipment_data(orders):
     # Erstelle einen Gruppen-Key: Jede Zeile mit einer nicht-leeren orderid startet eine neue Gruppe.
     orders['group'] = orders['orderid'].notna().cumsum()
     
-    # Spalten, die in Listen aggregiert werden sollen
+    # Spalten, die aggregiert werden sollen
     list_cols = ['description', 'product id', 'localized product name']
     
-    # Aggregations-Dictionary erstellen:
+    # Aggregations-Dictionary:
     # - Für list_cols: kombiniere die Werte in einer Liste.
     # - Für alle anderen Spalten (außer 'group'): nimm den ersten Wert.
     agg_dict = {col: (lambda x: list(x)) for col in list_cols}
@@ -108,12 +115,24 @@ def join_shipment_data(orders):
     # Konvertiere orderid zu Integer, um das Anhängen von .0 zu vermeiden
     shipments['orderid'] = shipments['orderid'].astype(int)
     
-    # Erstelle die neue Spalte "items" mit einer Liste von Dictionaries für jede Gruppe.
+    # Erstelle die neue Spalte "items". Für jede Zeile:
+    #  - splitte jeden Eintrag in "description" nach " - "
+    #  - verwende die einzelnen Teile zur Befüllung der neuen Dictionary-Keys
     shipments['items'] = shipments.apply(
         lambda row: [
-            {"description": d, "product id": p, "localized product name": n} 
+            {
+                "description": parts[0].strip() if len(parts) > 0 else None,
+                "number": parts[1].strip() if len(parts) > 1 else None,
+                "rarity": parts[2].strip() if len(parts) > 2 else None,
+                "dont know what this is": parts[3].strip() if len(parts) > 3 else None,
+                "language": parts[4].strip() if len(parts) > 4 else None,
+                "price per card": parts[5].strip() if len(parts) > 5 else None,
+                "product id": p,
+                "localized product name": n
+            }
             for d, p, n in zip(row["description"], row["product id"], row["localized product name"])
-        ], 
+            for parts in [d.split(" - ")]
+        ],
         axis=1
     )
     
