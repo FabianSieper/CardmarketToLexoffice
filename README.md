@@ -9,12 +9,13 @@ The tool is designed for execution in an windows environment. A python and Taskf
 To start the script, follow the steps:
 
 1. Downlaod the project
-2. Install Taskfile (see below)
+2. Install Taskfile (see corresponding section in this README.md)
+3. Install Python  (see corresponding section in this README.md)
 3. Run command `task create-bat`
 4. Copy the created file `CardmarketToLexoffice.bat` to a location you like
 5. Double click on it, to start the script
 
-### Taskfile
+### Install Taskfile
 
 Taskfile is used to simplify the usage of the application. To install Taskfile run the following command in your terminal.
 
@@ -29,9 +30,17 @@ For Windows:
 winget install Task.Task
 ```
 
+### Install Python
+
+Execute in cmd on Windows
+
+```bash
+winget install Python.Python.3.13
+```
+
 ## Requirements for development
 
-### Taskfile
+### Install Taskfile
 
 Taskfile is used to simplify the usage of the application. To install Taskfile run the following command in your terminal.
 
