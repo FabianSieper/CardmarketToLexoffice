@@ -44,7 +44,6 @@ tasks:
           exit 1
         fi
 
-
   playwright-codegen:
     desc: Generate Playwright code
     deps:
@@ -52,12 +51,10 @@ tasks:
     cmds:
       - python -m playwright codegen --target python
 
-  create-bat:
-    desc: "Create a desktop bat file to execute 'task run' (Windows only)"
+  build-exe:
     cmds:
-      - |
-        if [ -z "$USERPROFILE" ]; then
-          echo "This command only works on Windows."
-          exit 1
-        fi
-        cmd /C "set \"BAT_FILE=%USERPROFILE%\Desktop\RunProject.bat\" && echo @echo off > \"%BAT_FILE%\" && echo cd /d \"{{.PWD}}\" >> \"%BAT_FILE%\" && echo task run >> \"%BAT_FILE%\" && echo pause >> \"%BAT_FILE%\""
+      - pyinstaller --noconfirm --onefile --name cardmarketToLexoffice.exe --windowed main.py
+      - cp dist/cardmarketToLexoffice.exe .
+      - rm cardmarketToLexoffice.exe.spec
+      - rm -r build
+      - rm -r dist

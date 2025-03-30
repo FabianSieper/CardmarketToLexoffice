@@ -1,2 +1,5 @@
 testData/
 venv/
+build/
+dist/
+main.spec

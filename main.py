@@ -189,10 +189,12 @@ def main():
     success_count = 0
     for order in tqdm(joined_orders, "Rechnungen werden übertragen..."):
         invoice_payload = create_invoice_payload(order)
-        if send_invoice_to_lexoffice(invoice_payload):
-            success_count += 1
-        else:
-            logging.error(f"Rechnung für Bestellung {order.get('id', 'Unbekannt')} konnte nicht übertragen werden.")
+
+        # TODO: uncomment for production
+        # if send_invoice_to_lexoffice(invoice_payload):
+        #     success_count += 1
+        # else:
+        #     logging.error(f"Rechnung für Bestellung {order.get('id', 'Unbekannt')} konnte nicht übertragen werden.")
     logging.info(f"Übertragung abgeschlossen: {success_count} von {len(orders)} Rechnungen erfolgreich übertragen.")
 
 if __name__ == '__main__':
