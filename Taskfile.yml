@@ -1,0 +1,54 @@
+version: '3'
+
+tasks:
+
+  install:
+    desc: Install dependencies
+    deps:
+      - init
+    cmds:
+      - pip install -r requirements.txt
+
+  init:
+    desc: Create a Python virtual environment
+    cmds:
+      - python3 -m venv venv
+
+  run:
+    desc: Run the script
+    deps:
+      - install
+    cmds:
+      - python src/download-cardmarket-order-information.py
+
+  test-if-secrets-in-environment:
+    desc: Check if secrets are in the environment
+    cmds:
+      - |
+        echo "Checking environment variables..."
+
+        if [ "$(uname)" = "Linux" ] || [ "$(uname)" = "Darwin" ]; then
+          [ -z "$LEXOFFICE_API_KEY" ] && echo "❌ LEXOFFICE_API_KEY not set" && exit 1
+          echo "✅ All required variables are set"
+        elif [ "$OS" = "Windows_NT" ]; then
+          powershell -Command "
+            if (-not $env:LEXOFFICE_API_KEY) {
+              Write-Host '❌ LEXOFFICE_API_KEY not set'; exit 1
+            }
+            if (-not $env:LEXOFFICE_API_KEY) {
+              Write-Host '❌ LEXOFFICE_API_KEY not set'; exit 1
+            }
+            Write-Host '✅ All required variables are set'
+          "
+        else
+          echo "❌ Unsupported OS"
+          exit 1
+        fi
+
+
+  playwright-codegen:
+    desc: Generate Playwright code
+    deps:
+      - install
+    cmds:
+      - python -m playwright codegen --target python
