@@ -62,7 +62,7 @@ def take_cardmarket_orders_via_cmd_input():
     return joined_orders
 
 def extract_csv_data(file_path):
-    """Liest eine CSV- oder Excel-Datei und gibt die Daten als pandas DataFrame zurück."""
+    """Liest eine CSV-Datei und gibt die Daten als pandas DataFrame zurück."""
     import pandas as pd
     ext = os.path.splitext(file_path)[1].lower()
     if ext == '.csv':
@@ -70,8 +70,6 @@ def extract_csv_data(file_path):
             df = pd.read_csv(file_path, encoding='utf-8')
         except pd.errors.ParserError:
             df = pd.read_csv(file_path, encoding='utf-8', sep=';')
-    elif ext in ['.xls', '.xlsx']:
-        df = pd.read_excel(file_path)
     else:
         logging.error("Unsupported file type: " + ext)
         sys.exit(1)
@@ -81,37 +79,30 @@ def extract_csv_data(file_path):
 
 def join_shipment_data(orders):
     """
-    Gruppiert Daten nach Shipment Number.
-    Die Spalte wird standardisiert (lower case) und es wird pandas.groupby() verwendet.
+    Fügt Zeilen zusammen die zur selben Bestellung gehören.
     """
-    if 'shipment nr.' not in orders.columns:
-        logging.error("Spalte 'shipment nr.' wurde in den Daten nicht gefunden.")
+    if 'orderid' not in orders.columns:
+        logging.error("Spalte 'orderid' wurde in den Daten nicht gefunden.")
         return {}
-    shipments = []
-    for shipment_nr, group in orders.groupby('shipment nr.'):
-        articles = []
-        for _, row in group.iterrows():
-            article_info = {
-                "product_id": row.get("product id"),
-                "article": row.get("article"),
-                "product_name": row.get("localized product name"),
-                "expansion": row.get("expansion"),
-                "category": row.get("category"),
-                "amount": row.get("amount"),
-                "article_price": row.get("article value"),
-                "total_price": row.get("total"),
-                "currency": row.get("currency"),
-                "comments": row.get("comments"),
-            }
-            articles.append(article_info)
-        # TODO: add information about buyer
-        buyer_info = None
-        shipments.append({
-            "shipment_nr": shipment_nr,
-            "dateOfPurchase": datetime.strptime(row.get("date of purchase"), "%Y-%m-%d %H:%M:%S"),
-            "buyer": buyer_info,
-            "articles": articles
-        })
+    
+    orders['group'] = orders['orderid'].notna().cumsum()
+    
+    # Specify the columns to aggregate into lists
+    list_cols = ['description', 'product id', 'localized product name']
+    
+    # Build an aggregation dictionary:
+    # - For list_cols: combine the values into a list
+    # - For all other columns (except our helper "group" column): take the first value (from the row with orderId)
+    agg_dict = {col: (lambda x: list(x)) for col in list_cols}
+    for col in orders.columns:
+        if col not in list_cols + ['group']:
+            agg_dict[col] = 'first'
+    
+    # Group by the 'group' column and aggregate
+    shipments = orders.groupby('group', sort=False).agg(agg_dict).reset_index(drop=True)
+    shipments['orderid'] = shipments['orderid'].astype(int)
+    shipments.to_csv('/Users/fabi/Downloads/test-output.csv', index=False)
+    exit()
     return shipments
 
 def create_invoice_payload(order):
