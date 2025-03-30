@@ -52,6 +52,9 @@ tasks:
       - python -m playwright codegen --target python
 
   build-exe:
+    desc: Build the executable
+    deps:
+      - install
     cmds:
       - pyinstaller --noconfirm --onefile --name cardmarketToLexoffice.exe --windowed main.py
       - cp dist/cardmarketToLexoffice.exe .

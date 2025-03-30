@@ -3,3 +3,4 @@ venv/
 build/
 dist/
 main.spec
+cardmarketToLexoffice.exe.spec
