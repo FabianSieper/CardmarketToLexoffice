@@ -141,19 +141,42 @@ def create_invoice_payload(order):
     line_items = []
     articles = order.get('articles', [])
     for article in articles:
+        price = article.get("price")
+        name = article.get("name")
+        quantity = article.get("quantity")
+        
+        if not name:
+            logging.error(f"Artikel {article['product_id']} für Kunden '{customer['name']}' hat keinen Namen. Überspringe die Komplette Bestellung. Bitte füge den Artikel manuell zu Lexoffice hinzu.")
+            return None
+        
+        if not price:
+            logging.error(f"Artikel {name} für Kunden '{customer['name']}' hat keinen Preis. Überspringe die Komplette Bestellung. Bitte füge den Artikel manuell zu Lexoffice hinzu.")
+            return None
+        
+        if not quantity:
+            logging.error(f"Artikel {name} für Kunden '{customer['name']}' hat keine Menge. Überspringe die Komplette Bestellung. Bitte füge den Artikel manuell zu Lexoffice hinzu.")
+            return None
+        
         item = {
             "type": "custom",
-            "name": article.get("name", "Artikel"),
-            "quantity": article.get("quantity", 1),
+            "name": name,
+            "quantity": quantity,
             "unitName": "Stück",
             "unitPrice": {
                 "currency": order.get("currency", "EUR"),
-                "netAmount": article.get("price", 0.0),
+                "netAmount": price,
                 "taxRatePercentage": 19
-            }
+            },
+            "discountPercentage": 0,
+            "lineItemAmount": price
         }
         line_items.append(item)
     shipping_cost = order.get("shippingCost")
+    
+    if not shipping_cost:
+        logging.warn(f"Bestellung {order.get('shipment_nr', 'Unbekannt')} für Kunden '{customer['name']}' hat keine Versandkosten. Sollte das nicht richtig sein, bitte manuell in Lexoffice hinzufügen.")
+        shipping_cost = 0
+        
     if shipping_cost:
         shipping_item = {
             "type": "custom",
@@ -164,7 +187,9 @@ def create_invoice_payload(order):
                 "currency": order.get("currency", "EUR"),
                 "netAmount": shipping_cost,
                 "taxRatePercentage": 19
-            }
+            },
+            "discountPercentage": 0,
+            "lineItemAmount": shipping_cost
         }
         line_items.append(shipping_item)
     
@@ -219,6 +244,7 @@ def main():
         # else:
         #     logging.error(f"Rechnung für Bestellung {order.get('id', 'Unbekannt')} konnte nicht übertragen werden.")
     logging.info(f"Übertragung abgeschlossen: {success_count} von {len(orders)} Rechnungen erfolgreich übertragen.")
+    input("Drücken Sie Enter, um das Programm zu beenden.")
 
 if __name__ == '__main__':
     main()
