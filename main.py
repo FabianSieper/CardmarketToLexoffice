@@ -171,12 +171,12 @@ def parse_date(date_str: str) -> datetime:
 
 def create_invoice_payload(order):
     """Übersetzt eine CardMarket-Bestellung in ein lexoffice-Rechnungs-Payload-Format."""
-    name = order.get('name')
+    customer_name = order.get('name')
     street = order.get('street')
     city_and_postal_code = order.get('city')
     country = order.get('country')
     
-    if not name:
+    if not customer_name:
         logging.error("Kein Name gefunden. Kann keine Rechnung für Bestellung mit Liefernummer (Shipment Nr.) {} erstellen.".format(order.get('shipment_nr', 'Unbekannt')))
         return None
     
@@ -197,7 +197,7 @@ def create_invoice_payload(order):
     country_code = get_country_code(country)
     
     customer = {
-        "name": order.get('name'),
+        "name": customer_name,
         "address": {
             "street": street,
             "zip": postal_code,
@@ -286,14 +286,12 @@ def create_invoice_payload(order):
         }
         line_items.append(shipping_item)
     
-    # TODO: add address of own company?
     address = {
-    "name": "Bike & Ride GmbH & Co. KG",
-        "supplement": "Gebäude 10",
-        "street": "Musterstraße 42",
-        "city": "Freiburg",
-        "zip": "79112",
-        "countryCode": "DE"
+    "name": customer_name,
+        "street": street,
+        "zip": postal_code,
+        "city": city,
+        "countryCode": country_code
     }
     
     shipping_conditions = {
