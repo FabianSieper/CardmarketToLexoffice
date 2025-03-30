@@ -79,30 +79,47 @@ def extract_csv_data(file_path):
 
 def join_shipment_data(orders):
     """
-    Fügt Zeilen zusammen die zur selben Bestellung gehören.
+    Fügt Zeilen zusammen, die zur selben Bestellung gehören, erstellt eine neue Spalte 'items',
+    in der jede Liste von Dictionaries die entsprechenden Werte aus 'description',
+    'product id' und 'localized product name' enthält, und entfernt anschließend die
+    ursprünglichen Spalten.
     """
     if 'orderid' not in orders.columns:
         logging.error("Spalte 'orderid' wurde in den Daten nicht gefunden.")
         return {}
     
+    # Erstelle einen Gruppen-Key: Jede Zeile mit einer nicht-leeren orderid startet eine neue Gruppe.
     orders['group'] = orders['orderid'].notna().cumsum()
     
-    # Specify the columns to aggregate into lists
+    # Spalten, die in Listen aggregiert werden sollen
     list_cols = ['description', 'product id', 'localized product name']
     
-    # Build an aggregation dictionary:
-    # - For list_cols: combine the values into a list
-    # - For all other columns (except our helper "group" column): take the first value (from the row with orderId)
+    # Aggregations-Dictionary erstellen:
+    # - Für list_cols: kombiniere die Werte in einer Liste.
+    # - Für alle anderen Spalten (außer 'group'): nimm den ersten Wert.
     agg_dict = {col: (lambda x: list(x)) for col in list_cols}
     for col in orders.columns:
         if col not in list_cols + ['group']:
             agg_dict[col] = 'first'
     
-    # Group by the 'group' column and aggregate
+    # Gruppieren und aggregieren
     shipments = orders.groupby('group', sort=False).agg(agg_dict).reset_index(drop=True)
+    
+    # Konvertiere orderid zu Integer, um das Anhängen von .0 zu vermeiden
     shipments['orderid'] = shipments['orderid'].astype(int)
-    shipments.to_csv('/Users/fabi/Downloads/test-output.csv', index=False)
-    exit()
+    
+    # Erstelle die neue Spalte "items" mit einer Liste von Dictionaries für jede Gruppe.
+    shipments['items'] = shipments.apply(
+        lambda row: [
+            {"description": d, "product id": p, "localized product name": n} 
+            for d, p, n in zip(row["description"], row["product id"], row["localized product name"])
+        ], 
+        axis=1
+    )
+    
+    # Entferne die originalen Spalten
+    shipments.drop(columns=list_cols, inplace=True)
+    
     return shipments
 
 def create_invoice_payload(order):
