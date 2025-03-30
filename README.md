@@ -1,3 +1,10 @@
+# ToDos
+
+- install_windows.bat erstellen die installiert:
+  - python
+  - taskfile
+  und erstellt auf dem desktop eine .bat zum ausführen des ganzen
+
 # Card Market to Lex Office Script
 
 ## Requirements
@@ -32,22 +39,19 @@ For this to work, all credentials have to be stored in the environment of your c
 #### Windows - CMD
 
 ```bash
-set CARDMARKET_USERNAME=your_username
-set CARDMARKET_PASSWORD=your_password
+set LEXOFFICE_API_KEY=your_api_key
 ```
 
 #### Windows - Powershell
 
 ```bash
-$env:CARDMARKET_USERNAME="your_username"
-$env:CARDMARKET_PASSWORD="your_password"
+$env:LEXOFFICE_API_KEY="your_api_key"
 ```
 
 #### Mac / Linux
 
 ```bash
-export CARDMARKET_USERNAME=your_username
-export CARDMARKET_PASSWORD=your_password
+export LEXOFFICE_API_KEY=your_api_key
 ```
 
 ## Usage

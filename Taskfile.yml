@@ -1,7 +1,6 @@
 version: '3'
 
 tasks:
-
   install:
     desc: Install dependencies
     deps:
@@ -19,7 +18,7 @@ tasks:
     deps:
       - install
     cmds:
-      - python src/download-cardmarket-order-information.py
+      - python main.py
 
   test-if-secrets-in-environment:
     desc: Check if secrets are in the environment
@@ -57,12 +56,8 @@ tasks:
     desc: "Create a desktop bat file to execute 'task run' (Windows only)"
     cmds:
       - |
-        if not defined USERPROFILE (
-          echo This command only works on Windows.
-          exit /b 1
-        )
-        set "BAT_FILE=%USERPROFILE%\Desktop\RunProject.bat"
-        echo @echo off > "%BAT_FILE%"
-        echo cd /d "{{.PWD}}" >> "%BAT_FILE%"
-        echo task run >> "%BAT_FILE%"
-        echo pause >> "%BAT_FILE%"
+        if [ -z "$USERPROFILE" ]; then
+          echo "This command only works on Windows."
+          exit 1
+        fi
+        cmd /C "set \"BAT_FILE=%USERPROFILE%\Desktop\RunProject.bat\" && echo @echo off > \"%BAT_FILE%\" && echo cd /d \"{{.PWD}}\" >> \"%BAT_FILE%\" && echo task run >> \"%BAT_FILE%\" && echo pause >> \"%BAT_FILE%\""
