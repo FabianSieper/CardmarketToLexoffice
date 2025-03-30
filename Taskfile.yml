@@ -51,7 +51,7 @@ tasks:
     cmds:
       - python -m playwright codegen --target python
 
-  build-exe:
+  build-exe-for-windows:
     desc: Build the executable
     deps:
       - install

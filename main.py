@@ -12,8 +12,6 @@ import pytz
 import requests
 from tqdm import tqdm
 
-# TODO: add a lot of logging for easier debuggin in the future
-
 # Logging-Konfiguration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -38,11 +36,7 @@ def ask_or_get_api_key():
 def take_cardmarket_orders_via_cmd_input():
     """Nimmt Bestellungen von CardMarket über eine CMD-Eingabe entgegen."""
     
-    # TODO: uncomment for production
-    # order_exel_path = input("Bitte den Pfad zur Excel-Datei mit den Bestellungen angeben: ").strip("\"'")
-    
-    # TODO: remove for production
-    order_exel_path = '/Users/fabi/Downloads/Fabi.csv'
+    order_exel_path = input("Bitte den Pfad zur Excel-Datei mit den Bestellungen angeben: ").strip("\"'")
 
     if not order_exel_path.endswith(".csv"):
         logging.error("Bitte eine CSV-Datei angeben.")
@@ -319,8 +313,6 @@ def main():
             success_count += 1
         else:
             logging.error(f"Rechnung für Bestellung {order.get('id', 'Unbekannt')} konnte nicht übertragen werden.")
-        # TODO: remove for production
-        exit()
     logging.info(f"Übertragung abgeschlossen: {success_count} von {len(orders)} Rechnungen erfolgreich übertragen.")
     input("Drücken Sie Enter, um das Programm zu beenden.")
 
