@@ -51,13 +51,9 @@ tasks:
     cmds:
       - python -m playwright codegen --target python
 
-  build-exe-for-windows:
-    desc: Build the executable
-    deps:
-      - install
+  create-bat:
+    desc: Generates a Windows batch file for executing the script
     cmds:
-      - python -m PyInstaller --noconfirm --onefile --name cardmarketToLexoffice.exe --windowed main.py
-      - cp dist/cardmarketToLexoffice.exe .
-      - rm cardmarketToLexoffice.exe.spec
-      - rm -r build
-      - rm -r dist
+    - echo @ech off > CardmarketToLexoffice.bat
+    - echo cd /d $(pwd) >> CardmarketToLexoffice.bat
+    - echo task run >> CardmarketToLexoffice.bat

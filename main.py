@@ -34,6 +34,12 @@ def ask_or_get_api_key():
         if new_api_key:
             api_key = new_api_key
             set_key(env_file, "LEXOFFICE_API_KEY", api_key)
+
+    if not api_key:
+        logging.error("Es wurde kein API Key zur Verfügung gestellt.")
+        input("Drücke Enter um fortzufahren")
+        exit()
+        
     return api_key
 
 def take_cardmarket_orders_via_cmd_input():

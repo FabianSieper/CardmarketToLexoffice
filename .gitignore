@@ -5,3 +5,4 @@ dist/
 main.spec
 cardmarketToLexoffice.exe.spec
 .env
+CardmarketToLexoffice.bat

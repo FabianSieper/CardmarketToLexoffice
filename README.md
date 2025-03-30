@@ -2,14 +2,48 @@
 
 This application can be used to import invoices into Lex Office by providing a .csv file from cardmarket. Cardmarket is a platform for buying and selling "Magic the Gathering" playing cards.
 
+## Requirements for Usage
+
+The tool is designed for execution in an windows environment. A python and Taskfile installation is required.
+
+To start the script, follow the steps:
+
+1. Downlaod the project
+2. Install Taskfile (see below)
+3. Run command `task create-bat`
+4. Copy the created file `CardmarketToLexoffice.bat` to a location you like
+5. Double click on it, to start the script
+
+### Taskfile
+
+Taskfile is used to simplify the usage of the application. To install Taskfile run the following command in your terminal.
+
+For Mac:
+
+```bash
+curl -sSL https://taskfile.dev/install.sh | sh
+```
+
+For Windows:
+```bash
+winget install Task.Task
+```
+
 ## Requirements for development
 
 ### Taskfile
 
 Taskfile is used to simplify the usage of the application. To install Taskfile run the following command in your terminal.
 
+For Mac:
+
 ```bash
 curl -sSL https://taskfile.dev/install.sh | sh
+```
+
+For Windows:
+```bash
+winget install Task.Task
 ```
 
 ### Credentials
@@ -44,4 +78,4 @@ task run
 
 ## Lexoffice
 
-General information about the API can be found here: https://developers.lexoffice.io/docs/?shell#lexoffice-api-documentation
+#General information about the API can be found here: https://developers.lexoffice.io/docs/?shell#lexoffice-api-documentation
