@@ -11,7 +11,7 @@ tasks:
   init:
     desc: Create a Python virtual environment
     cmds:
-      - python3 -m venv venv
+      - python -m venv venv
 
   run:
     desc: Run the script
