@@ -6,3 +6,4 @@ main.spec
 cardmarketToLexoffice.exe.spec
 .env
 CardmarketToLexoffice.bat
+__pycache__/

@@ -12,9 +12,10 @@ def extract_csv_data(file_path: str) -> pd.DataFrame:
     ext: str = os.path.splitext(file_path)[1].lower()
     if ext == '.csv':
         try:
-            df = pd.read_csv(file_path, encoding='utf-8')
-        except pd.errors.ParserError:
             df = pd.read_csv(file_path, encoding='utf-8', sep=';')
+        except pd.errors.ParserError:
+            print("Fehler beim Einlesen der CSV-Datei. Es wird nun versucht die Datei mit ',' als Separator zu laden..")
+            df = pd.read_csv(file_path, encoding='utf-8', sep=',')
     else:
         logging.error("Unsupported file type: " + ext)
         sys.exit(1)
@@ -40,6 +41,7 @@ def parse_article(d: str, p: str, n: str) -> Dict[str, Any]:
     }
 
 def join_shipment_data(orders: pd.DataFrame) -> pd.DataFrame:
+    print(orders.columns)
     if 'orderid' not in orders.columns:
         logging.error("Spalte 'orderid' wurde in den Daten nicht gefunden.")
         return pd.DataFrame()
