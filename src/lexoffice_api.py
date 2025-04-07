@@ -9,12 +9,19 @@ import pytz
 from utils import get_country_code, parse_date
 
 
+def fix_encoding(text: Optional[str]) -> Optional[str]:
+    if text is None:
+        return None
+    try:
+        return text.encode("latin1").decode("utf8")
+    except Exception:
+        return text
+
 def create_invoice_payload(order: pd.Series) -> Optional[Dict[str, Any]]:
-    # [Mapping logic remains unchanged]
-    customer_name: str = order.get('name')
-    street: str = order.get('street')
-    city_and_postal: str = order.get('city')
-    country: str = order.get('country')
+    customer_name: str = fix_encoding(order.get('name'))
+    street: str = fix_encoding(order.get('street'))
+    city_and_postal: str = fix_encoding(order.get('city'))
+    country: str = fix_encoding(order.get('country'))
     if not all([customer_name, street, city_and_postal, country]):
         logging.error("Fehlende Kundendaten in shipment_nr: {}".format(order.get('shipment_nr', 'Unbekannt')))
         return None
@@ -57,8 +64,9 @@ def create_invoice_payload(order: pd.Series) -> Optional[Dict[str, Any]]:
     line_items: List[Dict[str, Any]] = []
     for article in articles:
         unit_price_with_currency: str = article.get("price per card")
-        name: str = article.get("name")
+        name: str = fix_encoding(article.get("name"))
         quantity: int = article.get("quantity")
+        card_condition: str = fix_encoding(article.get("card condition"))
         if not name or not unit_price_with_currency or not quantity:
             logging.error(f"Fehler bei Artikel in shipment_nr: {order.get('shipment_nr', 'Unbekannt')}")
             return None
@@ -70,7 +78,7 @@ def create_invoice_payload(order: pd.Series) -> Optional[Dict[str, Any]]:
             return None
         line_item = {
             "type": "custom",
-            "name": name,
+            "name": name + (" (" + card_condition + ")" if card_condition else ""),
             "quantity": quantity,
             "unitName": "Stück",
             "unitPrice": {

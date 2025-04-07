@@ -6,8 +6,7 @@ from datetime import datetime
 from typing import Optional, Tuple
 
 import pycountry
-import pytz
-from dotenv import load_dotenv, set_key
+from dotenv import set_key
 
 
 def ask_or_get_api_key() -> str:
@@ -29,7 +28,7 @@ def ask_or_get_api_key() -> str:
     return api_key
 
 def parse_date(date_str: str) -> datetime:
-    for fmt in ("%d.%m.%Y %H:%M:%S", "%Y-%m-%d %H:%M:%S"):
+    for fmt in ("%d.%m.%Y %H:%M:%S", "%Y-%m-%d %H:%M:%S", "%d.%m.%Y %H:%M", "%Y-%m-%d %H:%M"):
         try:
             return datetime.strptime(date_str, fmt)
         except ValueError:
