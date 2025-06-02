@@ -55,5 +55,5 @@ tasks:
     desc: Generates a Windows batch file for executing the script
     cmds:
     - echo @echo off > CardmarketToLexoffice.bat
-    - echo cd /d $(pwd) >> CardmarketToLexoffice.bat
+    - echo cd /d \"$(pwd)\" >> CardmarketToLexoffice.bat
     - echo task run >> CardmarketToLexoffice.bat
