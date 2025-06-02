@@ -129,7 +129,7 @@ def create_invoice_payload(order: pd.Series) -> Optional[Dict[str, Any]]:
         "totalPrice": {"currency": "EUR"},
         "shippingConditions": {
             "shippingDate": voucher_date,
-            "shippingType": "delivery"
+            "shippingType": "none"
         },
         "archived": False,
         "voucherDate": voucher_date,
